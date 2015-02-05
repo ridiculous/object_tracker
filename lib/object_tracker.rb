@@ -14,7 +14,7 @@ module ObjectTracker
   end
 
   def track_all!
-    track!(*(methods + instance_methods))
+    track!(*(methods | instance_methods))
   end
 
   def tracking?(method_name)
