@@ -20,6 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
+```ruby
 class Dog
   extend ObjectTracker
 
@@ -35,10 +36,13 @@ Dog.new.fetch('Hudog')
 #=> called new from (irb):27
 #=> called fetch with Hudog from (irb):27
 #=> Fetch the ball Hudog!
+```
 
 Or just track single method:
 
-  Dog.track! :fetch
+```ruby
+Dog.track! :fetch
+```
 
 ## Contributing
 
