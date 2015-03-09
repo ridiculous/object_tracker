@@ -31,11 +31,11 @@ end
 
 Dog.track_all!
 Dog
-    * called "inspect" [RUBY CORE]
+    * called "#inspect" [RUBY CORE]
 #=> Dog
 Dog.new.fetch('Hudog')
-    * called "new" [RUBY CORE]
-    * called "fetch" with Hudog [(irb):4]
+    * called ".new" [RUBY CORE]
+    * called "#fetch" with Hudog [(irb):4]
 #=> Fetch the ball Hudog!
 ```
 
