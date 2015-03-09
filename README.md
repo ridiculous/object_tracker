@@ -31,17 +31,41 @@ end
 
 Dog.track_all!
 Dog
-#=> inspect called from (irb):27
+    * called "inspect" [RUBY CORE]
+#=> Dog
 Dog.new.fetch('Hudog')
-#=> called new from (irb):27
-#=> called fetch with Hudog from (irb):27
+    * called "new" [RUBY CORE]
+    * called "fetch" with Hudog [(irb):4]
 #=> Fetch the ball Hudog!
 ```
 
 Or just track single method:
 
 ```ruby
-Dog.track! :fetch
+Dog.track :name
+```
+
+Or track methods for a single object:
+
+```ruby
+class Go
+  def fish
+    'We go!'
+  end
+end
+
+a = Go.new
+a.extend ObjectTracker
+a.track_all!
+```
+
+## Troubleshooting
+
+Having problems? Maybe a specific method is throwing some obscure error? Try ignoring that method, so we can get back on track!
+
+```ruby
+Dog.track_not :bad_doggy
+Dog.track_all! #=> will exclude tracking for :bad_doggy
 ```
 
 ## Contributing
