@@ -23,7 +23,7 @@ module ObjectTracker
   end
 
   def tracking?(method_name)
-    tracking.keys.include?(method_name.to_sym)
+    tracking.keys.include?(cleanse(method_name).to_sym)
   end
 
   def track_not(*args)
@@ -43,11 +43,15 @@ module ObjectTracker
   # PRIVATE
   #
 
+  def cleanse(str)
+    str.to_s.sub(/^[#.]/, '')
+  end
+
   def track!(method_names = nil)
     mod = Module.new
     Array(method_names || tracking).each do |method_name, source_def|
       mod.module_eval <<-RUBY, __FILE__, __LINE__
-        def #{method_name}(*args, &block)
+        def #{cleanse(method_name)}(*args, &block)
           msg = %Q(   * called "#{method_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{source_def}]"
@@ -81,7 +85,8 @@ module ObjectTracker
 
   def track_with_source(obj, method_name)
     source = obj.method(method_name).source_location || ['RUBY CORE']
-    tracking[method_name.to_sym] = source.join(':').split('/').last(5).join('/')
+    prefix = obj.class == Class ? '.' : '#'
+    tracking["#{prefix}#{method_name}".to_sym] = source.join(':').split('/').last(5).join('/')
   end
 
   def tracking
