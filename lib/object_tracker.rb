@@ -33,7 +33,8 @@ module ObjectTracker
     nil
   end
 
-  def track_all!
+  def track_all!(*args)
+    track_not *args if args.any?
     track_methods_for(self)
     track_methods_for(allocate) if respond_to?(:allocate)
     track!
