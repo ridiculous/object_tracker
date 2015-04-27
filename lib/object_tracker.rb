@@ -114,6 +114,7 @@ module ObjectTracker
       :public_send,
       :send,
       :class,
+      :object_id,
       :track,
       :tracking?,
       :track_not,
