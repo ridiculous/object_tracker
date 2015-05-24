@@ -1,6 +1,6 @@
 # ObjectTracker
 
-Track method calls to any object. Both class and instance methods can be tracked with params
+Track method calls to almost any object. Class and instance methods can be tracked (w/ arguments).
 
 ## Installation
 
