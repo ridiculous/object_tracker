@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["arebuckley@gmail.com"]
   spec.summary       = %q{Track method calls to any object.}
   spec.description   = %q{Track method calls to any object. Both class and instance methods can be tracked with params}
-  spec.homepage      = ""
+  spec.homepage      = 'https://github.com/ridiculous/object_tracker'
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")

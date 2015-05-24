@@ -68,6 +68,17 @@ Dog.track_not :bad_doggy
 Dog.track_all! #=> will exclude tracking for :bad_doggy
 ```
 
+## Issues
+
+* Doesn't work well (or at all) when trying to track Ruby core objects (`String`, `Array`, etc). You can work around this by
+ subclassing the target class before extending with `ObjectTracker`. For example:
+
+  ```ruby
+  class MyArray < Array
+  	extend ObjectTracker
+  end
+  ```
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/object_tracker/fork )
