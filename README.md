@@ -23,13 +23,19 @@ class MyKlass
 end
 ```
 
-Or just track single method:
+Track a single method:
 
 ```ruby
 MyKlass.track :fetch
 ```
 
-Or track methods for a single object:
+Or track all methods:
+
+```ruby
+MyKlass.track_all!
+```
+
+Or track an instance:
 
 ```ruby
 obj = MyKlass.new
