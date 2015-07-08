@@ -21,6 +21,7 @@ class MyKlass
     "Fetch the ball, #{name}!"
   end
 end
+```
 
 Or just track single method:
 
