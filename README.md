@@ -11,6 +11,12 @@ Add this line to your application's Gemfile:
 gem 'object_tracker'
 ```
 
+Or try it out by cloning the repo and running:
+
+```bash
+irb -I ./lib -r object_tracker
+```
+
 ## Usage
 
 ```ruby
@@ -38,8 +44,7 @@ MyKlass.track_all!
 Or track an instance:
 
 ```ruby
-obj = MyKlass.new
-obj.extend ObjectTracker
+obj = MyKlass.new.extend ObjectTracker
 obj.track_all!
 ```
 
