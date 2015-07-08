@@ -1,6 +1,7 @@
-# ObjectTracker
+# Ruby ObjectTracker
 
-Track method calls to almost any object. Class and instance methods can be tracked (w/ arguments).
+Track class and instance methods, including arguments and definition source. You can extend a class to track calls to itself and it's 
+instances, or extend instances directly.
 
 ## Installation
 
@@ -10,53 +11,29 @@ Add this line to your application's Gemfile:
 gem 'object_tracker'
 ```
 
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install object_tracker
-
 ## Usage
 
 ```ruby
-class Dog
+class MyKlass
   extend ObjectTracker
 
   def fetch(name)
-    "Fetch the ball #{name}!"
+    "Fetch the ball, #{name}!"
   end
 end
-
-Dog.track_all!
-Dog
-    * called "#inspect" [RUBY CORE]
-#=> Dog
-Dog.new.fetch('Hudog')
-    * called ".new" [RUBY CORE]
-    * called "#fetch" with Hudog [(irb):4]
-#=> Fetch the ball Hudog!
-```
 
 Or just track single method:
 
 ```ruby
-Dog.track :name
+MyKlass.track :fetch
 ```
 
 Or track methods for a single object:
 
 ```ruby
-class Go
-  def fish
-    'We go!'
-  end
-end
-
-a = Go.new
-a.extend ObjectTracker
-a.track_all!
+obj = MyKlass.new
+obj.extend ObjectTracker
+obj.track_all!
 ```
 
 ## Example
@@ -237,17 +214,17 @@ I, [2015-07-07T19:16:24.481081 #39091]  INFO -- : (0.000411s) COMMIT
 Having problems? Maybe a specific method is throwing some obscure error? Try ignoring that method, so we can get back on track!
 
 ```ruby
-Dog.track_not :bad_doggy
-Dog.track_all! #=> will exclude tracking for :bad_doggy
+MyKlass.track_not :bad_method
+MyKlass.track_all! #=> will exclude tracking for :bad_method
 ```
 
 ## Issues
 
-* Doesn't work well (or at all) when trying to track Ruby core objects (`String`, `Array`, etc). You can work around this by
+Doesn't work well (or at all) when trying to track Ruby core objects (`String`, `Array`, etc). You can work around this by
  subclassing the target class before extending with `ObjectTracker`. For example:
 
-  ```ruby
-  class MyArray < Array
-  	extend ObjectTracker
-  end
-  ```
+```ruby
+class MyArray < Array
+	extend ObjectTracker
+end
+```
