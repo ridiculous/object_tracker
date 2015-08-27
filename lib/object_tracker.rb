@@ -1,4 +1,5 @@
-require "object_tracker/version"
+require 'benchmark'
+require 'object_tracker/version'
 
 fail "ObjectTracker #{ObjectTracker::VERSION} only supports Ruby 2+" if RUBY_VERSION < '2.0.0'
 
@@ -56,8 +57,11 @@ module ObjectTracker
           msg = %Q(   * called "#{method_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{source_def}]"
+          result = nil
+          time = Benchmark.realtime { result = super }
+          msg << " (" << time.to_s << ")"
           puts msg
-          super
+          result
         rescue NoMethodError => e
           raise e if e.message !~ /no superclass/
         end
