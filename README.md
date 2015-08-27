@@ -243,7 +243,7 @@ class TopLevel::MyKlass
 end
 ```
 
-If you encounter that problem, either extend the particual instance or your using, or rewrite to:
+If you encounter that problem, either extend the particular instance you're using, or if you can, rewrite it as:
 
 ```ruby
 class TopLevel
