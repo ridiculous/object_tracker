@@ -1,7 +1,7 @@
 # Ruby ObjectTracker
 
 Track class and instance methods, including arguments and definition source. You can extend a class to track calls to itself and it's 
-instances, or extend instances directly.
+instances, or extend instances directly. This can be helpful for debugging by providing info on what methods are being called on your object
 
 ## Installation
 
@@ -237,6 +237,6 @@ Doesn't work well (or at all) when trying to track Ruby core objects (`String`, 
 
 ```ruby
 class MyArray < Array
-	extend ObjectTracker
+  extend ObjectTracker
 end
 ```
