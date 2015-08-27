@@ -234,6 +234,25 @@ MyKlass.track_not :bad_method
 MyKlass.track_all! #=> will exclude tracking for :bad_method
 ```
 
+I've also noticed it doesn't work so well with namespaced classes in the format:
+
+```ruby
+class TopLevel::MyKlass
+  extend ObjectTracker
+  track_all!
+end
+```
+
+If you encounter that problem, either extend the particual instance or your using, or rewrite to:
+
+```ruby
+class TopLevel
+  class MyKlass
+    extend ObjectTracker
+    track_all!
+  end
+end
+```
 ## Issues
 
 Doesn't work well (or at all) when trying to track Ruby core objects (`String`, `Array`, etc). You can work around this by
