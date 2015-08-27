@@ -3,6 +3,10 @@
 Track class and instance methods, including arguments and definition source. You can extend a class to track calls to itself and it's 
 instances, or extend instances directly. This can be helpful for debugging by providing info on what methods are being called on your object
 
+## Requires
+
+* Ruby 2+
+
 ## Installation
 
 Add this line to your application's Gemfile:
