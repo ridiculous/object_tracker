@@ -53,7 +53,7 @@ module ObjectTracker
     mod = Module.new
     Array(method_names || tracking).each do |method_name, source_def|
       mod.module_eval <<-RUBY, __FILE__, __LINE__
-        def #{cleanse(method_name)}(*args, &block)
+        def #{cleanse(method_name)}(*args)
           msg = %Q(   * called "#{method_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{source_def}]"
@@ -61,6 +61,8 @@ module ObjectTracker
           time = Benchmark.realtime { result = super }
           msg << " (" << time.to_s << ")"
           puts msg
+          @__tracked_calls ||= Set.new
+          @__tracked_calls << "#{method_name}"
           result
         rescue NoMethodError => e
           raise e if e.message !~ /no superclass/
@@ -99,37 +101,11 @@ module ObjectTracker
   end
 
   def track_reserved_methods
-    @__reserved_methods ||= [
-      :!,
-      :!=,
-      :!~,
-      :<,
-      :<=,
-      :<=>,
-      :==,
-      :===,
-      :=~,
-      :>,
-      :>=,
-      :[],
-      :[]=,
-      :__id__,
-      :__send__,
-      :`,
-      :public_send,
-      :send,
-      :class,
-      :object_id,
-      :track,
-      :tracking?,
-      :track_not,
-      :track_all!,
-      :track!,
-      :track_methods_for,
-      :track_with_source,
-      :tracking,
-      :track_reserved_methods
-    ]
+    @__reserved_methods ||= (defined?(Rails) ? [:default_scope, :base_class, :superclass, :<, :current_scope=] : [])
+  end
+
+  def tracked_calls
+    @__tracked_calls
   end
 
   class UntrackableMethod < StandardError
