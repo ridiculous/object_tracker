@@ -1,8 +1,6 @@
 require 'benchmark'
 require 'object_tracker/version'
 
-fail "ObjectTracker #{ObjectTracker::VERSION} only supports Ruby 2+" if RUBY_VERSION < '2.0.0'
-
 module ObjectTracker
   def track(*args)
     args.each do |method_name|
@@ -78,8 +76,10 @@ module ObjectTracker
 
     # Handle both instance and class level extension
     if respond_to?(:prepend)
+      prepend(Inspector)
       prepend(mod)
     else
+      extend(Inspector)
       extend(mod)
     end
   end
@@ -101,16 +101,24 @@ module ObjectTracker
   end
 
   def track_reserved_methods
-    @__reserved_methods ||= (defined?(Rails) ? [:default_scope, :base_class, :superclass, :<, :current_scope=] : [])
-  end
-
-  def tracked_calls
-    @__tracked_calls
+    @__reserved_methods ||= begin
+      names = [:__send__, :object_id]
+      names.concat [:default_scope, :base_class, :superclass, :<, :current_scope=] if defined?(Rails)
+      names
+    end
   end
 
   class UntrackableMethod < StandardError
     def initialize(method_name)
       super "Can't track :#{method_name} because it's not defined on this class or it's instance"
+    end
+  end
+
+  module Inspector
+    def inspect
+      ivars = instance_variables - [:@__tracking, :@__tracked_calls, :@__reserved_methods]
+      vars = ivars.map { |ivar| ivar.to_s + "=" + instance_variable_get(ivar).to_s }
+      %Q(#<#{self.class.name}:#{object_id}(tracking)#{' ' if vars.any? }#{vars.join(', ')}>)
     end
   end
 end
