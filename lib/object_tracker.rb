@@ -75,7 +75,7 @@ module ObjectTracker
     RUBY
 
     # Handle both instance and class level extension
-    if respond_to?(:prepend)
+    if Class === self.class
       prepend(Inspector)
       prepend(mod)
     else
