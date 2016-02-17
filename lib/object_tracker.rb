@@ -44,7 +44,7 @@ module ObjectTracker
   #
 
   def cleanse(str)
-    str.to_s.sub(/^[#.]/, '')
+    str.to_s.sub(/^\w*[#.]/, '')
   end
 
   def track!(method_names = nil)
@@ -92,8 +92,19 @@ module ObjectTracker
 
   def track_with_source(obj, method_name)
     source = obj.method(method_name).source_location || ['RUBY CORE']
-    prefix = obj.class == Class ? '.' : '#'
-    tracking["#{prefix}#{method_name}".to_sym] = source.join(':').split('/').last(5).join('/')
+    case obj
+    when Class, Module
+      name = obj.name
+      prefix = '.'
+    else
+      if obj.class === Class
+        prefix = '.'
+      else
+        prefix = '#'
+      end
+      name = obj.class.name
+    end
+    tracking["#{name}#{prefix}#{method_name}".to_sym] = source.join(':').split('/').last(5).join('/')
   end
 
   def tracking
