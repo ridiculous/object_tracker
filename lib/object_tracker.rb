@@ -92,16 +92,14 @@ module ObjectTracker
 
   def track_with_source(obj, method_name)
     source = obj.method(method_name).source_location || ['RUBY CORE']
-    case obj
-    when Class, Module
+    if Class === obj || Module === obj
       name = obj.name
       prefix = '.'
+    elsif obj.class === Class
+      prefix = '.'
+      name = obj.class.name
     else
-      if obj.class === Class
-        prefix = '.'
-      else
-        prefix = '#'
-      end
+      prefix = '#'
       name = obj.class.name
     end
     tracking["#{name}#{prefix}#{method_name}".to_sym] = source.join(':').split('/').last(5).join('/')
