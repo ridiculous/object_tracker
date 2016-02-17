@@ -56,8 +56,8 @@ module ObjectTracker
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{source_def}]"
           result = nil
-          time = Benchmark.realtime { result = super }
-          msg << " (" << time.to_s << ")"
+          bm = Benchmark.measure { result = super }
+          msg << " (%.5f)" % bm.real
           puts msg
           @__tracked_calls ||= Set.new
           @__tracked_calls << "#{method_name}"
