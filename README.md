@@ -1,7 +1,8 @@
-# Ruby ObjectTracker [![Gem Version](https://badge.fury.io/rb/object_tracker.svg)](http://badge.fury.io/rb/object_tracker)
+# Ruby Object Tracker [![Gem Version](https://badge.fury.io/rb/object_tracker.svg)](http://badge.fury.io/rb/object_tracker)
 
-Track class and instance methods, including arguments and definition source. You can extend a class to track calls to itself and it's 
-instances, or extend instances directly. This can be helpful for debugging by providing info on what methods are being called on your object
+An easy way to track Ruby objects. Tracks class and instance method calls with arguments + file name and line number. 
+Extend a class to track class _and_ instance methods, or extend individual instances. This can be helpful for debugging 
+by providing insight on what methods are being called on your object.
 
 ## Requirements
 
