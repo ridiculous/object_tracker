@@ -2,18 +2,13 @@ require 'benchmark'
 require 'object_tracker/version'
 
 module ObjectTracker
-  def track(*args)
-    args.each do |method_name|
+  def track(*method_names)
+    method_names.each do |method_name|
       next if tracking?(method_name) || track_reserved_methods.include?(method_name)
       if respond_to?(method_name)
         track!(method_name => track_with_source(self, method_name))
-      elsif respond_to?(:allocate)
-        inst = allocate
-        if inst.respond_to?(method_name)
-          track!(method_name => track_with_source(inst, method_name))
-        else
-          fail UntrackableMethod, method_name
-        end
+      elsif respond_to?(:instance_methods) && instance_methods.include?(method_name)
+        track!(method_name => track_with_source(inst, method_name))
       else
         fail UntrackableMethod, method_name
       end
@@ -25,17 +20,23 @@ module ObjectTracker
     tracking.keys.include?(cleanse(method_name).to_sym)
   end
 
-  def track_not(*args)
-    args.each do |method_name|
+  def track_not(*method_names)
+    method_names.each do |method_name|
       track_reserved_methods << method_name unless track_reserved_methods.include?(method_name)
     end
     nil
   end
 
-  def track_all!(*args)
-    track_not *args if args.any?
-    track_methods_for(self)
-    track_methods_for(allocate) if respond_to?(:allocate)
+  # @param method_names [Array<Symbol>] method names to track
+  # @option :except [Array<Symbol>] method names to NOT track
+  def track_all!(method_names = [], except: [])
+    track_not *except if except.any?
+    if method_names.any?
+      track_methods(method_names)
+    else
+      track_methods(methods)
+      track_methods(instance_methods) if respond_to?(:instance_methods)
+    end
     track!
   end
 
@@ -47,6 +48,7 @@ module ObjectTracker
     str.to_s.sub(/^\w*[#.]/, '')
   end
 
+  # @param method_names [Array<Symbol>]
   def track!(method_names = nil)
     mod = Module.new
     Array(method_names || tracking).each do |method_name, source_def|
@@ -55,6 +57,7 @@ module ObjectTracker
           msg = %Q(   * called "#{method_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{source_def}]"
+
           result = nil
           bm = Benchmark.measure { result = super }
           msg << " (%.5f)" % bm.real
@@ -84,8 +87,9 @@ module ObjectTracker
     end
   end
 
-  def track_methods_for(obj)
-    (obj.methods - track_reserved_methods).each do |method_name|
+  # @param method_names [Array<Symbol>]
+  def track_methods(method_names)
+    (method_names - track_reserved_methods).each do |method_name|
       track_with_source(obj, method_name)
     end
   end
