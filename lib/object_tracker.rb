@@ -29,7 +29,8 @@ module ObjectTracker
 
   # @param method_names [Array<Symbol>] method names to track
   # @option :except [Array<Symbol>] method names to NOT track
-  def track_all!(method_names = [], context = self, except: [])
+  def track_all!(method_names = [], context = self, except: [], before: ->(_context, *_args) {})
+    except = Array(except)
     track_not *except if except.any?
     if method_names.any?
       track_methods(method_names, context)
@@ -43,7 +44,7 @@ module ObjectTracker
         end
       end
     end
-    track!
+    track! method_names, before: before
   end
 
   #
@@ -53,11 +54,13 @@ module ObjectTracker
   # @param method_names [Array<Symbol>]
   # @option :mod [Module] module to add tracking to, will be mixed into self
   # @option :mod_name [String] name for the extended module
-  def track!(method_names = [], mod: Module.new, mod_name: "ObjectTackerExt")
+  def track!(method_names = [], mod: Module.new, mod_name: "ObjectTackerExt", before: ->(_context, *_args) {})
     trackers = method_names.any? ? tracking.select { |_display_name, info| method_names.include?(info[:name]) } : tracking
     trackers.each do |display_name, tracker|
+      ObjectTracker.tracker_hooks["#{display_name}"] << before if before
       mod.module_eval <<-RUBY, __FILE__, __LINE__
         def #{tracker[:name]}(*args)
+          ObjectTracker.call_tracker_hooks("#{display_name}", self, *args)
           msg = %Q(   * called "#{display_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
           msg << "[#{tracker[:source]}]"
@@ -117,9 +120,20 @@ module ObjectTracker
     @__tracking ||= {}
   end
 
+  def self.tracker_hooks
+    @__tracker_hooks ||= Hash.new { |me, key| me[key] = [] }
+  end
+
+  # @note If we don't rescue, we get a segfault. If we rescue and puts exception, we get a segfault. This is an extremely sensitive method
+  def self.call_tracker_hooks(display_name, context, *args)
+    tracker_hooks["#{display_name}"].each do |hook|
+      hook.call(context, display_name, *args) rescue nil
+    end
+  end
+
   def track_reserved_methods
     @__reserved_methods ||= begin
-      names = ObjectTracker.instance_methods(false) + [:__send__, :object_id]
+      names = [:__send__]
       names.concat [:default_scope, :base_class, :superclass, :<, :current_scope=] if defined?(Rails)
       names
     end

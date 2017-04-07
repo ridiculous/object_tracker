@@ -16,6 +16,10 @@ class Wut
   include Mixin
   extend ObjectTracker
 
+  def self.method_calls
+    @method_calls ||= Hash.new(0)
+  end
+
   def initialize
     @data = []
     @info = { name: 'foo', weight: 20 }
@@ -28,13 +32,11 @@ class Wut
   def to_s
   end
 
-  module Say
-    extend self
-    def huh?
-      ??
-    end
+  def huh?
+    ??
   end
-  track_all!
+
+  track_all! before: ->(_context, name, *_args) { Wut.method_calls[name] += 1 }, except: :method_calls
 end
 
 class Example
