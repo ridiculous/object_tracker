@@ -17,7 +17,7 @@ module ObjectTracker
   end
 
   def tracking?(method_name)
-    tracking.keys.include?(cleanse(method_name).to_sym)
+    !tracking.detect { |_display_name, tracking_info| tracking_info[:name] == method_name }.nil?
   end
 
   def track_not(*method_names)
@@ -29,13 +29,19 @@ module ObjectTracker
 
   # @param method_names [Array<Symbol>] method names to track
   # @option :except [Array<Symbol>] method names to NOT track
-  def track_all!(method_names = [], except: [])
+  def track_all!(method_names = [], context = self, except: [])
     track_not *except if except.any?
     if method_names.any?
-      track_methods(method_names)
+      track_methods(method_names, context)
     else
-      track_methods(methods)
-      track_methods(instance_methods) if respond_to?(:instance_methods)
+      track_methods(methods, context)
+      if respond_to?(:instance_methods)
+        if respond_to?(:instance)
+          track_methods(instance.methods - methods, instance)
+        elsif respond_to?(:allocate)
+          track_methods(instance_methods - methods, allocate)
+        end
+      end
     end
     track!
   end
@@ -44,26 +50,21 @@ module ObjectTracker
   # PRIVATE
   #
 
-  def cleanse(str)
-    str.to_s.sub(/^\w*[#.]/, '')
-  end
-
   # @param method_names [Array<Symbol>]
-  def track!(method_names = nil)
-    mod = Module.new
-    Array(method_names || tracking).each do |method_name, source_def|
+  # @option :mod [Module] module to add tracking to, will be mixed into self
+  # @option :mod_name [String] name for the extended module
+  def track!(method_names = [], mod: Module.new, mod_name: "ObjectTackerExt")
+    trackers = method_names.any? ? tracking.select { |_display_name, info| method_names.include?(info[:name]) } : tracking
+    trackers.each do |display_name, tracker|
       mod.module_eval <<-RUBY, __FILE__, __LINE__
-        def #{cleanse(method_name)}(*args)
-          msg = %Q(   * called "#{method_name}" )
+        def #{tracker[:name]}(*args)
+          msg = %Q(   * called "#{display_name}" )
           msg << "with " << args.join(', ') << " " if args.any?
-          msg << "[#{source_def}]"
-
+          msg << "[#{tracker[:source]}]"
           result = nil
           bm = Benchmark.measure { result = super }
           msg << " (%.5f)" % bm.real
           puts msg
-          @__tracked_calls ||= Set.new
-          @__tracked_calls << "#{method_name}"
           result
         rescue NoMethodError => e
           raise e if e.message !~ /no superclass/
@@ -76,19 +77,20 @@ module ObjectTracker
         base.extend(self)
       end
     RUBY
-
     # Handle both instance and class level extension
     if Class === self
+      const_set(mod_name, mod)
       prepend(Inspector)
       prepend(mod)
     else
+      self.class.const_set(mod_name, mod)
       extend(Inspector)
       extend(mod)
     end
   end
 
   # @param method_names [Array<Symbol>]
-  def track_methods(method_names)
+  def track_methods(method_names, obj = self)
     (method_names - track_reserved_methods).each do |method_name|
       track_with_source(obj, method_name)
     end
@@ -106,7 +108,9 @@ module ObjectTracker
       prefix = '#'
       name = obj.class.name
     end
-    tracking["#{name}#{prefix}#{method_name}".to_sym] = source.join(':').split('/').last(5).join('/')
+    tracking["#{name}#{prefix}#{method_name}"] = { context: obj,
+                                                   name: method_name,
+                                                   source: source.join(':').split('/').last(5).join('/') }
   end
 
   def tracking
@@ -115,7 +119,7 @@ module ObjectTracker
 
   def track_reserved_methods
     @__reserved_methods ||= begin
-      names = [:__send__, :object_id]
+      names = ObjectTracker.instance_methods(false) + [:__send__, :object_id]
       names.concat [:default_scope, :base_class, :superclass, :<, :current_scope=] if defined?(Rails)
       names
     end
@@ -129,7 +133,7 @@ module ObjectTracker
 
   module Inspector
     def inspect
-      ivars = instance_variables - [:@__tracking, :@__tracked_calls, :@__reserved_methods]
+      ivars = instance_variables - [:@__tracking, :@__reserved_methods]
       vars = ivars.map { |ivar| ivar.to_s + "=" + instance_variable_get(ivar).to_s }
       %Q(#<#{self.class.name}:#{object_id}(tracking)#{' ' if vars.any? }#{vars.join(', ')}>)
     end
