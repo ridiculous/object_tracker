@@ -15,7 +15,7 @@ module ObjectTracker
     msg << "with " << ObjectTracker.format_args(args) unless args.empty?
     msg << "[#{source}]"
     bm = Benchmark.measure do
-      result = yield rescue nil
+      result = yield
     end
     puts msg << " (%.5f)" % bm.real
     result
@@ -92,7 +92,7 @@ module ObjectTracker
       mod.module_eval <<-RUBY, __FILE__, __LINE__
         def #{tracker[:name]}(*args)
           ObjectTracker.call_tracker_hooks(:before, "#{display_name}", self, *args)
-          ObjectTracker.call_with_tracking("#{display_name}", args, "#{tracker[:source]}") { super }
+          ObjectTracker.call_with_tracking("#{display_name}", args, "#{tracker[:source]}") { super rescue nil }
         ensure
           ObjectTracker.call_tracker_hooks(:after, "#{display_name}", self, *args)
         end
@@ -147,8 +147,8 @@ module ObjectTracker
 
   def track_reserved_methods
     @__reserved_methods ||= begin
-      names = [:__send__, :class_eval]
-      names.concat [:default_scope, :base_class, :superclass, :<, :current_scope=] if defined?(Rails)
+      names = [:__send__]
+      names.concat [:default_scope, :current_scope=] if defined?(Rails)
       names
     end
   end
