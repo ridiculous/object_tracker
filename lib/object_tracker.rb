@@ -2,6 +2,32 @@ require 'benchmark'
 require 'object_tracker/version'
 
 module ObjectTracker
+  # @note If we don't rescue, we get a segfault. If we rescue and puts exception, we get a segfault. This is an extremely sensitive method
+  def self.call_tracker_hooks(key, method_name, context, *args)
+    tracker_hooks[key].each do |hook|
+      hook.call(context, method_name, *args) rescue nil
+    end
+  end
+
+  def self.call_with_tracking(method_name, args, source)
+    result = nil
+    msg = %Q(   * called "#{method_name}" )
+    msg << "with " << ObjectTracker.format_args(args) unless args.empty?
+    msg << "[#{source}]"
+    bm = Benchmark.measure do
+      result = yield rescue nil
+    end
+    puts msg << " (%.5f)" % bm.real
+    result
+  end
+
+  def self.format_args(args, result = '')
+    args.each do |arg|
+      result << arg.to_s
+    end
+    result
+  end
+
   def track(*method_names)
     method_names.each do |method_name|
       next if tracking?(method_name) || track_reserved_methods.include?(method_name)
@@ -29,7 +55,9 @@ module ObjectTracker
 
   # @param method_names [Array<Symbol>] method names to track
   # @option :except [Array<Symbol>] method names to NOT track
-  def track_all!(method_names = [], context = self, except: [], before: ->(_context, *_args) {})
+  # @option :before [Proc] proc to call before method execution (e.g. ->(_name, _context, *_args) {})
+  # @option :after [Proc] proc to call after method execution (e.g. ->(_name, _context, *_args) {})
+  def track_all!(method_names = [], context = self, except: [], before: nil, after: nil)
     except = Array(except)
     track_not *except if except.any?
     if method_names.any?
@@ -44,7 +72,7 @@ module ObjectTracker
         end
       end
     end
-    track! method_names, before: before
+    track! method_names, before: before, after: after
   end
 
   #
@@ -54,27 +82,22 @@ module ObjectTracker
   # @param method_names [Array<Symbol>]
   # @option :mod [Module] module to add tracking to, will be mixed into self
   # @option :mod_name [String] name for the extended module
-  def track!(method_names = [], mod: Module.new, mod_name: "ObjectTackerExt", before: ->(_context, *_args) {})
+  # @option :before [Proc] proc to call before method execution (e.g. ->(_name, _context, *_args) {})
+  # @option :after [Proc] proc to call after method execution (e.g. ->(_name, _context, *_args) {})
+  def track!(method_names = [], mod: Module.new, mod_name: "ObjectTackerExt", before: nil, after: nil)
+    ObjectTracker.tracker_hooks[:before] << before if before
+    ObjectTracker.tracker_hooks[:after] << after if after
     trackers = method_names.any? ? tracking.select { |_display_name, info| method_names.include?(info[:name]) } : tracking
     trackers.each do |display_name, tracker|
-      ObjectTracker.tracker_hooks["#{display_name}"] << before if before
       mod.module_eval <<-RUBY, __FILE__, __LINE__
         def #{tracker[:name]}(*args)
-          ObjectTracker.call_tracker_hooks("#{display_name}", self, *args)
-          msg = %Q(   * called "#{display_name}" )
-          msg << "with " << args.join(', ') << " " if args.any?
-          msg << "[#{tracker[:source]}]"
-          result = nil
-          bm = Benchmark.measure { result = super }
-          msg << " (%.5f)" % bm.real
-          puts msg
-          result
-        rescue NoMethodError => e
-          raise e if e.message !~ /no superclass/
+          ObjectTracker.call_tracker_hooks(:before, "#{display_name}", self, *args)
+          ObjectTracker.call_with_tracking("#{display_name}", args, "#{tracker[:source]}") { super }
+        ensure
+          ObjectTracker.call_tracker_hooks(:after, "#{display_name}", self, *args)
         end
       RUBY
     end
-
     mod.module_eval <<-RUBY, __FILE__, __LINE__
       def self.prepended(base)
         base.extend(self)
@@ -83,11 +106,9 @@ module ObjectTracker
     # Handle both instance and class level extension
     if Class === self
       const_set(mod_name, mod)
-      prepend(Inspector)
       prepend(mod)
     else
       self.class.const_set(mod_name, mod)
-      extend(Inspector)
       extend(mod)
     end
   end
@@ -124,16 +145,9 @@ module ObjectTracker
     @__tracker_hooks ||= Hash.new { |me, key| me[key] = [] }
   end
 
-  # @note If we don't rescue, we get a segfault. If we rescue and puts exception, we get a segfault. This is an extremely sensitive method
-  def self.call_tracker_hooks(display_name, context, *args)
-    tracker_hooks["#{display_name}"].each do |hook|
-      hook.call(context, display_name, *args) rescue nil
-    end
-  end
-
   def track_reserved_methods
     @__reserved_methods ||= begin
-      names = [:__send__]
+      names = [:__send__, :class_eval]
       names.concat [:default_scope, :base_class, :superclass, :<, :current_scope=] if defined?(Rails)
       names
     end
@@ -142,14 +156,6 @@ module ObjectTracker
   class UntrackableMethod < StandardError
     def initialize(method_name)
       super "Can't track :#{method_name} because it's not defined on this class or it's instance"
-    end
-  end
-
-  module Inspector
-    def inspect
-      ivars = instance_variables - [:@__tracking, :@__reserved_methods]
-      vars = ivars.map { |ivar| ivar.to_s + "=" + instance_variable_get(ivar).to_s }
-      %Q(#<#{self.class.name}:#{object_id}(tracking)#{' ' if vars.any? }#{vars.join(', ')}>)
     end
   end
 end
