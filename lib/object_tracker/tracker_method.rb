@@ -14,7 +14,8 @@ module ObjectTracker
     end
 
     def source_location
-      context.method(name).source_location
+      method_handle = context.method(name)
+      method_handle.source_location if method_handle
     end
 
     def display_name

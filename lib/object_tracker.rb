@@ -3,7 +3,6 @@ require 'object_tracker/version'
 
 module ObjectTracker
   autoload :TrackerMethod, 'object_tracker/tracker_method'
-  autoload :InstanceTrackerMethod, 'object_tracker/instance_tracker_method'
 
   # @param method_names [Array<Symbol>] method names to track
   # @option :except [Array<Symbol>] method names to NOT track
@@ -39,18 +38,19 @@ module ObjectTracker
     class_methods = []
     inst_methods = []
     reserved = obj.respond_to?(:reserved_tracker_methods) ? obj.reserved_tracker_methods : ObjectTracker.reserved_tracker_methods
+    obj_instance = obj.respond_to?(:allocate) ? obj.allocate : obj
     if Array(method_names).any?
       Array(method_names).each do |method_name|
         if obj.methods.include?(method_name)
           class_methods << TrackerMethod.new(obj, method_name)
         elsif obj.respond_to?(:instance_method)
-          inst_methods << InstanceTrackerMethod.new(obj, method_name)
+          inst_methods << TrackerMethod.new(obj_instance, method_name)
         end
       end
     else
       if obj.respond_to?(:instance_methods)
         (obj.instance_methods - reserved - Array(except)).each do |method_name|
-          inst_methods << InstanceTrackerMethod.new(obj, method_name)
+          inst_methods << TrackerMethod.new(obj_instance, method_name)
         end
       end
       (obj.methods - reserved - Array(except)).each do |method_name|
