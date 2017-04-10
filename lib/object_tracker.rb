@@ -2,38 +2,69 @@ require 'benchmark'
 require 'object_tracker/version'
 
 module ObjectTracker
+  autoload :TrackerMethod, 'object_tracker/tracker_method'
+  autoload :InstanceTrackerMethod, 'object_tracker/instance_tracker_method'
+
   # @param method_names [Array<Symbol>] method names to track
   # @option :except [Array<Symbol>] method names to NOT track
   # @option :before [Proc] proc to call before method execution (e.g. ->(_name, _context, *_args) {})
   # @option :after [Proc] proc to call after method execution (e.g. ->(_name, _context, *_args) {})
-  def track_all!(method_names = [], except: [], **options)
+  def track_all!(method_names = [], **options)
+    ObjectTracker.(self, method_names, **options)
+    self
+  end
+
+  def reserved_tracker_methods
+    @__reserved_methods ||= begin
+      names = [:__send__]
+      names.concat [:default_scope, :current_scope=] if defined?(Rails)
+      names
+    end
+  end
+
+  #= Utilities (not extended or mixed in)
+  #
+  # Tracks method calls to the given object
+  #
+  # @note Alias to .()
+  #
+  # @param obj [Object] class or instance to track
+  # @param method_names [Array<Symbol>] method names to track
+  # @option :except [Array<Symbol>] method names to NOT track
+  # @option :before [Proc] proc to call before method execution (e.g. ->(_name, _context, *_args) {})
+  # @option :after [Proc] proc to call after method execution (e.g. ->(_name, _context, *_args) {})
+  def self.call(obj, method_names = [], except: [], **options)
     class_methods = []
     inst_methods = []
+    reserved = obj.respond_to?(:reserved_tracker_methods) ? obj.reserved_tracker_methods : ObjectTracker.reserved_tracker_methods
     if Array(method_names).any?
       Array(method_names).each do |method_name|
-        if methods.include?(method_name)
-          class_methods << TrackerMethod.new(self, method_name)
-        elsif respond_to?(:instance_method)
-          inst_methods << TrackerMethod.new(self, method_name, :instance_method)
+        if obj.methods.include?(method_name)
+          class_methods << TrackerMethod.new(obj, method_name)
+        elsif obj.respond_to?(:instance_method)
+          inst_methods << InstanceTrackerMethod.new(obj, method_name)
         end
       end
     else
-      if respond_to?(:instance_methods)
-        (instance_methods - reserved_tracker_methods - Array(except)).each do |method_name|
-          inst_methods << TrackerMethod.new(self, method_name, :instance_method)
+      if obj.respond_to?(:instance_methods)
+        (obj.instance_methods - reserved - Array(except)).each do |method_name|
+          inst_methods << InstanceTrackerMethod.new(obj, method_name)
         end
       end
-      (methods - reserved_tracker_methods - Array(except)).each do |method_name|
-        class_methods << TrackerMethod.new(self, method_name)
+      (obj.methods - reserved - Array(except)).each do |method_name|
+        class_methods << TrackerMethod.new(obj, method_name)
       end
     end
-    mod = ObjectTracker.build_tracker_mod(class_methods, options)
-    extend mod
+    obj.send :extend, ObjectTracker.define_tracker_mod(obj, :TrackerExt, ObjectTracker.build_tracker_mod(class_methods, options))
     if inst_methods.any?
-      inst_mod = ObjectTracker.build_tracker_mod(inst_methods, options)
-      prepend inst_mod
+      obj.send :prepend, ObjectTracker.define_tracker_mod(obj, :InstanceTrackerExt, ObjectTracker.build_tracker_mod(inst_methods, options))
     end
-    self
+    obj
+  end
+
+  def self.define_tracker_mod(context, name, mod)
+    context = context.class unless context.respond_to?(:const_set)
+    context.const_set name, mod
   end
 
   # @param trackers [Array<TrackerMethod>]
@@ -88,54 +119,5 @@ module ObjectTracker
 
   def self.tracker_hooks
     @__tracker_hooks ||= Hash.new { |me, key| me[key] = [] }
-  end
-
-  #
-  # Private
-  #
-
-  def define_tracker_mod(mod_name: 'ObjectTackerExt')
-    "#{@prefix == '.' ? 'Class' : 'Instance'}#{mod_name}#{@name.to_s.upcase.gsub(/\W/, '')}"
-  end
-
-  def reserved_tracker_methods
-    @__reserved_methods ||= begin
-      names = [:__send__]
-      names.concat [:default_scope, :current_scope=] if defined?(Rails)
-      names
-    end
-  end
-
-  class UntrackableMethod < StandardError
-    def initialize(method_name)
-      super "Can't track :#{method_name} because it's not defined on this class or it's instance"
-    end
-  end
-
-  class TrackerMethod
-    attr_accessor :name, :context, :finder, :display_name
-
-    def initialize(context, name, finder = :method)
-      @name = name
-      @context = context
-      @finder = finder
-      if Class === context || Module === context
-        @obj = context
-        @prefix = '.'
-      elsif context.class === Class
-        @prefix = '.'
-        @obj = context.class
-      else
-        @prefix = '#'
-        @obj = context.class
-      end
-      @display_name = "#{@obj.name}#{@prefix}#{@name}"
-    end
-
-    def source
-      return @source if defined? @source
-      @source = @context.send(finder, name).source_location
-      @source = @source ? @source.join(':').split('/').last(5).join('/') : 'RUBY CORE'
-    end
   end
 end

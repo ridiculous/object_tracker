@@ -30,6 +30,7 @@ class Wut
   end
 
   def to_s
+    'ssssssss'
   end
 
   def huh?
