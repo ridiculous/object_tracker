@@ -69,4 +69,10 @@ obj = MyClass.track_all!(:fetch).new
 obj.fetch
 obj.to_s
 
+class Bare
+  def metal
+    :ok
+  end
+end
+
 IRB.start

@@ -14,11 +14,13 @@ module ObjectTracker
     self
   end
 
-  def reserved_tracker_methods
-    @__reserved_methods ||= begin
-      names = [:__send__]
-      names.concat [:default_scope, :current_scope=] if defined?(Rails)
-      names
+  class << self
+    def reserved_tracker_methods
+      @__reserved_methods ||= begin
+        names = [:__send__]
+        names.concat [:default_scope, :current_scope=] if defined?(Rails)
+        names
+      end
     end
   end
 

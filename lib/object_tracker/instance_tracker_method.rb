@@ -1,7 +1,7 @@
 module ObjectTracker
   class InstanceTrackerMethod < TrackerMethod
     def context
-      super.respond_to?(:allocate) ? super.allocate : super
+      @_context ||= super.respond_to?(:allocate) ? super.allocate : super
     end
 
     def source_location

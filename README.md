@@ -12,13 +12,13 @@ execution time. Helpful for debugging and learning the language.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'object_tracker'
+gem 'object_tracker', '~> 2.0'
 ```
 
 Or try it out by cloning the repo and running:
 
 ```bash
-irb -I ./lib -r object_tracker
+bin/console
 ```
 
 ## Usage
@@ -50,6 +50,21 @@ Or track an instance:
 ```ruby
 obj = MyKlass.new.extend ObjectTracker
 obj.track_all!
+```
+
+Or track an object without extending the class:
+```ruby
+ObjectTracker.(MyKlass)
+```
+
+## Hook methods
+
+Pass a proc (or anything that responds to `#call`) to the `:before` or `:after` options and they will be called before and after the method call,
+respectively. This allows you to do things like track the number of methods calls.
+
+```ruby
+method_calls = Hash.new(0)
+ObjectTracker.(Bare, before: ->(_context, name, *_args) { method_calls[name] += 1 })
 ```
 
 ## Example
