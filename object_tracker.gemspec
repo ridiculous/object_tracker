@@ -8,12 +8,12 @@ Gem::Specification.new do |spec|
   spec.version       = ObjectTracker::VERSION
   spec.authors       = ["Ryan Buckley"]
   spec.email         = ["arebuckley@gmail.com"]
-  spec.summary       = %q{Track method calls to almost any object.}
-  spec.description   = %q{Track method calls to almost any object. Class and instance methods can be tracked (w/ arguments).}
+  spec.summary       = %q{Track method calls to any object.}
+  spec.description   = %q{Track method calls to any object. Class and instance methods can be tracked (w/ arguments and source location).}
   spec.homepage      = 'https://github.com/ridiculous/object_tracker'
   spec.license       = "MIT"
 
-  spec.files         = `git ls-files -z`.split("\x0")
+  spec.files         = `git ls-files`.split($/).keep_if { |f| f =~ /object_tracker/ and f !~ %r{test/} }
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
