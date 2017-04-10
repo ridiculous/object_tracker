@@ -112,10 +112,8 @@ module ObjectTracker
   def self.format_args(args)
     result = "["
     args.each do |arg|
-      if arg
-        result << arg.to_s
-        result << ", "
-      end
+      result << (arg ? arg.to_s : "nil")
+      result << ", "
     end
     result.sub! /,\s\z/, ""
     result << "] "
