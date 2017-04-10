@@ -56,5 +56,16 @@ class Example
   track_all!
 end
 
+class MyClass
+  extend ObjectTracker
+
+  def fetch
+    :ok
+  end
+end
+
+obj = MyClass.track_all!(:fetch).new
+obj.fetch
+obj.to_s
 
 IRB.start

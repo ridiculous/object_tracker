@@ -36,7 +36,7 @@ end
 Track a single method:
 
 ```ruby
-MyKlass.track :fetch
+MyKlass.track_all! :fetch
 ```
 
 Or track all methods:
