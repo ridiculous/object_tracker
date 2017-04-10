@@ -80,12 +80,10 @@ module ObjectTracker
       mod.module_eval <<-RUBY, __FILE__, __LINE__
         def #{tracker.name}(*args)
           ObjectTracker.call_tracker_hooks(:before, "#{tracker.display_name}", self, *args)
-          result, message = ObjectTracker.call_with_tracking("#{tracker.display_name}", args, "#{tracker.source}") { super rescue nil }
+          result, message = ObjectTracker.call_with_tracking("#{tracker.display_name}", args, "#{tracker.source}") { super }
+          puts message
           result
         ensure
-          $stdout.sync = true
-          $stdout.puts message
-          $stdout.flush
           ObjectTracker.call_tracker_hooks(:after, "#{tracker.display_name}", self, *args)
         end
       RUBY
@@ -106,17 +104,21 @@ module ObjectTracker
     msg << "with " << ObjectTracker.format_args(args) unless args.empty?
     msg << "[#{source}]"
     bm = Benchmark.measure do
-      result = yield
+      result = yield rescue nil
     end
     [result, msg << " (%.5f)" % bm.real]
   end
 
-  def self.format_args(*args)
-    result = ""
+  def self.format_args(args)
+    result = "["
     args.each do |arg|
-      result += (arg.nil? ? 'nil' : arg.to_s)
+      if arg
+        result << arg.to_s
+        result << ", "
+      end
     end
-    result + " "
+    result.sub! /,\s\z/, ""
+    result << "] "
   end
 
   def self.tracker_hooks
