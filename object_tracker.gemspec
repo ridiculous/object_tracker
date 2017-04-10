@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = ObjectTracker::VERSION
   spec.authors       = ["Ryan Buckley"]
   spec.email         = ["arebuckley@gmail.com"]
-  spec.summary       = %q{Track method calls to almost any object.}
-  spec.description   = %q{Track method calls to almost any object. Class and instance methods can be tracked (w/ arguments).}
+  spec.summary       = %q{Track method calls to any object.}
+  spec.description   = %q{Track method calls to any object. Class and instance methods can be tracked (w/ arguments and source location).}
   spec.homepage      = 'https://github.com/ridiculous/object_tracker'
   spec.license       = "MIT"
 
