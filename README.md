@@ -63,8 +63,13 @@ Pass a proc (or anything that responds to `#call`) to the `:before` or `:after` 
 respectively. This allows you to do things like track the number of methods calls.
 
 ```ruby
-method_calls = Hash.new(0)
-ObjectTracker.(Bare, before: ->(_context, name, *_args) { method_calls[name] += 1 })
+method_calls = Hash.new 0
+slow_methods = Set.new []
+hooks = [
+  before: ->(context, name, args) { method_calls[name] += 1 },
+  after: ->(context, name, args, duration) { slow_methods << name if duration > 0.05 }
+]
+ObjectTracker.(Bare, *hooks)
 ```
 
 ## Example

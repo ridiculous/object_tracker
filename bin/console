@@ -73,6 +73,10 @@ class Bare
   def metal
     :ok
   end
+
+  def sleepy
+    sleep 0.2
+  end
 end
 
 IRB.start
