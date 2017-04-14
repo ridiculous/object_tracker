@@ -84,7 +84,7 @@ Silence logging:
 ObjectTracker.logger.level = Logger::ERROR
 ```
 
-## Example
+## [Example] ActiveRecord Tracking
 
 Tracking an ActiveRecord 3.2 model
 
@@ -102,36 +102,18 @@ ObjectTracker.(u = User.first).audits;nil
 Having problems? Maybe a specific method is throwing some obscure error? Try ignoring that method, so we can get back on track!
 
 ```ruby
-Person.track_not :bad_method
-Person.track_all! #=> will exclude tracking for :bad_method
+Person.track_all! except: :bad_method
 ```
 
-I've also noticed it doesn't work so well with namespaced classes in the format:
+## Extending Core Classes
+
+ObjectTracker can't track core Ruby objects directly, such as `String` and `Array`. So don't even try it!
+
+There is a workaround however! Simply extend a _subclass_ with `ObjectTracker`:
 
 ```ruby
-class TopLevel::Person
-  extend ObjectTracker
-  track_all!
-end
-```
-
-If you encounter that problem, either extend the particular instance you're using, or if you can, rewrite it as:
-
-```ruby
-class TopLevel
-  class Person
-    extend ObjectTracker
-    track_all!
-  end
-end
-```
-## Issues
-
-Doesn't work well (or at all) when trying to track Ruby core objects (`String`, `Array`, etc). You can work around this by
- subclassing the target class before extending with `ObjectTracker`. For example:
-
-```ruby
-class MyArray < Array
+class List < Array
   extend ObjectTracker
 end
+List.track_all!
 ```

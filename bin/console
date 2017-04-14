@@ -85,6 +85,14 @@ class Person
   def greet(name)
     "ello, #{name}!"
   end
+
+  class Address
+    extend ObjectTracker
+  end
+end
+
+class List < Array
+  extend ObjectTracker
 end
 
 IRB.start
