@@ -72,6 +72,16 @@ hooks = [
 ObjectTracker.(Bare, *hooks)
 ```
 
+## Logging
+
+ObjectTracker uses the default Ruby [logger](http://ruby-doc.org/stdlib-2.4.1/libdoc/logger/rdoc/Logger.html) with a default DEBUG level
+
+Silence logging:
+
+```ruby
+ObjectTracker.logger.level = Logger::ERROR
+```
+
 ## Example
 
 Tracking a Sequel::Model object:
