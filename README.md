@@ -15,12 +15,6 @@ Add this line to your application's Gemfile:
 gem 'object_tracker', '~> 2.1'
 ```
 
-Or try it out by cloning the repo and running:
-
-```bash
-bin/console
-```
-
 ## Usage
 
 ```ruby
@@ -76,9 +70,9 @@ ObjectTracker.(Bare, *hooks)
 
 ## Logging
 
-ObjectTracker uses the default Ruby [logger](http://ruby-doc.org/stdlib-2.4.1/libdoc/logger/rdoc/Logger.html) with a default DEBUG level
+`ObjectTracker` uses the default Ruby [logger](http://ruby-doc.org/stdlib-2.4.1/libdoc/logger/rdoc/Logger.html) with a default `DEBUG` level
 
-Silence logging:
+Silence logging
 
 ```ruby
 ObjectTracker.logger.level = Logger::ERROR
@@ -107,9 +101,9 @@ Person.track_all! except: :bad_method
 
 ## Extending Core Classes
 
-ObjectTracker can't track core Ruby objects directly, such as `String` and `Array`. So don't even try it!
+`ObjectTracker` can't track core Ruby objects directly, such as `String` and `Array`. So don't even try it!
 
-There is a workaround however! Simply extend a _subclass_ with `ObjectTracker`:
+There is a workaround however! Simply extend a _subclass_ with `ObjectTracker`
 
 ```ruby
 class List < Array
@@ -117,3 +111,14 @@ class List < Array
 end
 List.track_all!
 ```
+
+## Contributing
+
+* Fork it
+* Run tests with `rake` (just kidding, there are no tests)
+* Boot a console with `bin/console`
+* Make sure things still work
+* Make changes and submit a PR to [https://github.com/ridiculous/object_tracker](https://github.com/ridiculous/object_tracker)
+
+## License
+MIT
