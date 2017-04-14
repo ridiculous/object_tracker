@@ -79,4 +79,12 @@ class Bare
   end
 end
 
+class Person
+  extend ObjectTracker
+
+  def greet(name)
+    "ello, #{name}!"
+  end
+end
+
 IRB.start
