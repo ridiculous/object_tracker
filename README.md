@@ -65,7 +65,7 @@ hooks = [
   before: ->(context, name, args) { method_calls[name] += 1 },
   after: ->(context, name, args, duration) { slow_methods << name if duration > 0.05 }
 ]
-ObjectTracker.(Bare, *hooks)
+ObjectTracker.(Person, *hooks)
 ```
 
 ## Logging
