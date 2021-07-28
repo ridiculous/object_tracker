@@ -47,11 +47,11 @@ module ObjectTracker
   def self.call(obj, method_names = [], except: [], **options)
     class_methods, inst_methods = ObjectTracker.build_tracker_methods(obj, method_names, except: except)
     name = obj.to_s
-    obj.send :extend, ObjectTracker.define_tracker_mod(obj, :TrackerExt, ObjectTracker.build_tracker_mod(class_methods, options))
+    obj.send :extend, ObjectTracker.define_tracker_mod(obj, :TrackerExt, ObjectTracker.build_tracker_mod(class_methods, **options))
     if inst_methods.any?
       # Silence all the noise about comparing class name and checking object behavior
       ObjectTracker.with_error_logging do
-        obj.send :prepend, ObjectTracker.define_tracker_mod(obj, :InstanceTrackerExt, ObjectTracker.build_tracker_mod(inst_methods, options))
+        obj.send :prepend, ObjectTracker.define_tracker_mod(obj, :InstanceTrackerExt, ObjectTracker.build_tracker_mod(inst_methods, **options))
       end
     end
     logger.info { "following #{name}" }
