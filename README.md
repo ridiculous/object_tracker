@@ -99,19 +99,6 @@ Having problems? Maybe a specific method is throwing some obscure error? Try ign
 Person.track_all! except: :bad_method
 ```
 
-## Extending Core Classes
-
-`ObjectTracker` can't track core Ruby objects directly, such as `String` and `Array`. So don't even try it!
-
-There is a workaround however! Simply extend a _subclass_ with `ObjectTracker`
-
-```ruby
-class List < Array
-  extend ObjectTracker
-end
-List.track_all!
-```
-
 ## Contributing
 
 * Fork it
